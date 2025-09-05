@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Feliz 1 mes — Unificado</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    /* ================= GLOBAL / PRIMER CÓDIGO (Matrix romántico) ================= */
+    :root{ --pink1:#ff0044; --pink2:#ff66cc; }
+    html,body{ margin:0; padding:0; height:100%; background:#000; color:#fff; font-family:monospace; overflow:hidden; }
+    canvas#matrix{ position:fixed; top:0; left:0; width:100%; height:100%; z-index:0; background:black; }
+
+    .gate {
+      position: fixed; inset: 0; z-index: 2; display:flex; justify-content:center; align-items:center; background:transparent;
+    }
+    .gate.hidden{ opacity:0; visibility:hidden; }
+    .card{
+      background:#000; padding:30px 50px; border-radius:16px; text-align:center; color:white; font-size:22px;
+      border: 3px solid transparent; border-image: linear-gradient(90deg,#ff003c,#ff33aa,#ff003c) 1;
+      box-shadow: 0 0 20px #ff003c, 0 0 40px #ff33aa, 0 0 60px #ff003c; animation: glow 2s linear infinite; z-index:3; position:relative;
+    }
+    @keyframes glow { 0%{box-shadow:0 0 15px #ff003c,0 0 30px #ff33aa;} 50%{box-shadow:0 0 25px #ff66cc,0 0 60px #ff3399;} 100%{box-shadow:0 0 15px #ff003c,0 0 30px #ff33aa;} }
+
+    input#pw{ margin-top:14px; padding:12px; font-size:18px; border-radius:8px; border:none; outline:none; background:#111; color:white; width:220px; text-align:center; }
+    button{ margin-top:14px; padding:12px 28px; font-size:18px; border-radius:8px; border:none; background: linear-gradient(90deg,#ff003c,#ff33aa); color:white; cursor:pointer; transition:.3s; }
+    button:hover{ transform:scale(1.05); box-shadow:0 0 15px #ff3399; }
+    .msg{ margin-top:12px; font-size:16px; }
+    .ok{ color:#00ff99; } .err{ color:#ff3366; }
+
+    .unlocked{ position:fixed; inset:0; display:flex; justify-content:center; align-items:center; color:#ff66aa; font-size:34px; font-weight:bold; z-index:1; text-shadow:0 0 25px #ff0066,0 0 50px #ff3399; animation:flicker 1.5s infinite; }
+    @keyframes flicker{ 0%,19%,21%,23%,25%,54%,56%,100%{opacity:1;} 20%,24%,55%{opacity:0.4;} }
+
+    /* ================= SEGUNDO CÓDIGO (video, carta, carrusel) ================= */
+    #segundoBody {
+      display:none; background:#000; color:#fff; font-family: Arial, sans-serif; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+      overflow-y:auto; height:100vh; padding:20px 0; z-index:1;
+    }
+    #segundoBody video#videoAmor{ width:100%; height:auto; display:block; max-height:80vh; object-fit:contain; background:#000; border-radius:8px; }
+    .carta{
+      max-width:900px; margin:30px auto; padding:20px; font-size:18px; line-height:1.6; text-align:justify; color:#fff;
+      background: rgba(255,0,100,0.06); border-radius:12px; box-shadow:0 6px 30px rgba(255,0,150,0.12);
+    }
+    .boton-amor{
+      display:block; margin:20px auto 40px; padding:12px 28px; font-size:20px; border-radius:12px; border:0;
+      background: linear-gradient(90deg,var(--pink1),var(--pink2),var(--pink1)); color:#fff; cursor:pointer; box-shadow:0 6px 30px rgba(255,0,150,0.18);
+      transition: transform .98s ease, box-shadow .98s;
+    }
+    .boton-amor:active{ transform: translateY(1px) scale(.995); } .boton-amor:hover{ transform: scale(1.03); }
+
+    .overlay{ position:fixed; inset:0; background: rgba(0,0,0,0.9); display:flex; justify-content:center; align-items:center; z-index:999; padding:20px; box-sizing:border-box; flex-direction:column; gap:18px; opacity:0; visibility:hidden; transition: opacity .35s ease; }
+    .overlay.show{ opacity:1; visibility:visible; }
+    .announce-box{ background:#000; color:#ffdfe9; padding:24px 28px; border-radius:14px; text-align:center; font-size:26px; font-weight:700; max-width:92%; border:3px solid transparent; border-image: linear-gradient(90deg,var(--pink1),var(--pink2),var(--pink1)) 1; box-shadow: 0 10px 40px rgba(255,0,140,0.18), 0 0 30px rgba(255,100,170,0.06); }
+    .frase-box{ background:#000; color:#fff; padding:28px 36px; border-radius:16px; text-align:center; font-size:28px; font-weight:700; max-width:1100px; width: min(96%, 1000px); border:4px solid transparent; border-image: linear-gradient(90deg,var(--pink1),var(--pink2),var(--pink1)) 1; box-shadow: 0 20px 80px rgba(255,0,140,0.25), 0 0 40px rgba(255,0,140,0.12); line-height:1.4; animation: popIn .45s ease; }
+    @keyframes popIn{ from{ transform: scale(.96); opacity:0; } to{ transform: scale(1); opacity:1; } }
+
+    .corazon { position:fixed; top:-20px; font-size:22px; color:#ff4d6d; animation: caer 6s linear infinite; z-index: 1; pointer-events:none; opacity:.9; }
+    @keyframes caer{ 0%{ transform: translateY(-10px) rotate(0deg); opacity:0.50; } 50%{ transform: translateY(110vh) rotate(360deg); opacity:0; } }
+
+    @media (max-width:520px){
+      .frase-box{ font-size:20px; padding:18px; }
+      .announce-box{ font-size:20px; padding:16px; }
+    }
+
+    /* ================= CODIGO EXTRA (scopeado dentro de #extraCodigo) ================= */
+    #extraCodigo{ display:none; position:fixed; inset:0; z-index:1200; background:black; overflow:hidden; font-family: 'Segoe UI', Tahoma, sans-serif; color:white; }
+    #extraCodigo #intro{ position:fixed; inset:0; display:flex; justify-content:center; align-items:center; text-align:center; z-index:1210; background:black; animation: fadeOut 1s ease forwards; animation-delay:4s; }
+    #extraCodigo #intro h1{ font-size:2.5em; color:white; text-shadow:0 0 5px #ff1493,0 0 10px #ff0000,0 0 15px #ff69b4; animation: pulse 1.5s infinite; }
+    @keyframes pulse{ 0%,100%{transform:scale(1);} 50%{transform:scale(1.1);} }
+    @keyframes fadeOut{ to{ opacity:0; visibility:hidden; } }
+
+    #extraCodigo .corazon{ position:absolute; color:violet; font-size:18px; opacity:0.6; z-index:1; user-select:none; pointer-events:none; animation:sparkle 2s infinite ease-in-out alternate; }
+    @keyframes sparkle{ 0%{opacity:0.4; text-shadow:0 0 2px violet;} 50%{opacity:0.8; text-shadow:0 0 8px #ff69b4,0 0 12px #ff1493;} 100%{opacity:0.5; text-shadow:0 0 4px violet;} }
+
+    #extraCodigo #corazonesE{ position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:1220; display:none; grid-template-columns: repeat(5, 30px); grid-gap:5px; }
+    #extraCodigo .corazonRojo{ font-size:30px; color:red; cursor:pointer; animation: latido 0.9s infinite; user-select:none; text-shadow:0 0 8px pink,0 0 15px red; }
+    @keyframes latido{ 0%,100%{transform:scale(1);} 50%{transform:scale(1.3);} }
+
+    #extraCodigo #videoContainerExtra{ position:fixed; inset:0; background: rgba(0,0,0,0.95); display:none; justify-content:center; align-items:center; z-index:1230; }
+    #extraCodigo video#loveVideoExtra{ width:90%; max-width:500px; border:3px solid pink; border-radius:15px; box-shadow:0 0 20px red; background:#000; }
+
+    #extraCodigo canvas#fireworksExtra{ position:fixed; inset:0; pointer-events:none; z-index:1240; }
+
+    /* small helpers */
+    .hidden{ display:none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- =================== PRIMER CÓDIGO (Código Final 1) =================== -->
+  <div id="primero">
+    <canvas id="matrix"></canvas>
+
+    <section class="gate" id="gate">
+      <div class="card">
+        <div>password mi amor ❤️🔐</div>
+        <input id="pw" type="text" placeholder="Escribe la contraseña">
+        <br>
+        <button onclick="check()">Abrir</button>
+        <div id="msg" class="msg"></div>
+      </div>
+    </section>
+
+    <div class="unlocked" id="unlocked" style="display:none;">
+      💖 Acceso concedido — Eres mi todo 💖
+    </div>
+  </div>
+
+  <!-- =================== SEGUNDO CÓDIGO (video, carta, carrusel) =================== -->
+  <div id="segundoBody">
+    <video id="videoAmor" controls playsinline preload="auto">
+      <source src="https://mdodentaltraining.org/wp-content/uploads/2025/09/WhatsApp-Video-2025-09-03-at-7.58.19-AM.mp4" type="video/mp4">
+      Tu navegador no soporta video HTML5.
+    </video>
+
+    <div class="carta" id="carta">
+     Mi amor!!! 😍😍 Feliz 1 mes de esta maravillosa relación... ❤🙈🌷🌷Te amo con un amor que no cabe en el pecho, que desborda el alma y se me escapa en suspiros, te amo como se aman las estrellas al cielo, como el mar abraza a la orilla en cada latido.<br><br> Eres mi niña hermosa, mi ternura infinita, mi razón de soñar despierto, de perderme en caricias, te amo demasiado, más allá de lo que dicen las palabras, te amo mas de lo que pueda imaginar... ❤ tu intenso te ama mi amor 😍😍 Lo siento si a veces soy un novio tonto... lo siento 😔 Sin pensarlo te convertiste en aquello por el cual quiero luchar con una fuerza que jamas pense que tendría, eres mi princesita la cual quiero hacer feliz el resto de mi vida ❤🥺... <br> Sabes mi amor no solo te amo te adoro, me encantas, me fascinas, 😍 Decirte cuánto te amo es algo que me hace inmensamente feliz, osea demasiado hehe... Tenerte en mi vida ha cambiado todo el mundo negro y podrido por un mundo de colores en donde me siento feliz y en paz, en donde me siento cómodo 🥺❤ Cada dia te voy amante mas Eimy... es que amarte y demostrarte todo lo que siento dentro de mí hace que cada despertar por las mañanas sean únicos y preciosos... 😍<br><br> Pensarte cada día, en cada momento, es lo que llena mi corazón de alegría... Como tambien no saber nada de ti me destruye el corazón... No te imaginas la felicidad y el amor que me das, mi amor. Con solo pensarte, logras que desaparezcan mis heridas, mis inseguridades, mis problemas. Gracias por amarme tal como soy, mi princesa. Eres mi mayor regalo, lo más valioso que tengo en la vida. Y te juro que dare todo de mi para que me ames mucho y seamos muy felices juntos ❤❤❤❤❤❤❤<br><br> Solo quiero decirte que te amo con todo mi ser. Eres mi todo, mi motivación, mi refugio y mi felicidad de cada día. Nunca olvides que eres hermosa y perfecta para mí. Feliz 1 mes juntos mi amor... vamos por más, pero juntos ❤❤ Te animas a ser feliz conmigo? ❤☄️
+      <!-- (mantuve íntegra la carta que me diste; si quieres que la vuelva a pegar completa, lo hago) -->
+    </div>
+
+    <button class="boton-amor" id="btnAmor">Cliqueame mi amor ❤️</button>
+
+    <div id="overlay" class="overlay" aria-hidden="true">
+      <div id="overlayInner" class="announce-box" role="dialog" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <!-- =================== CODIGO EXTRA (se muestra AL FINAL del carrusel) =================== -->
+  <div id="extraCodigo" aria-hidden="true">
+    <div id="intro">
+      <h1>Aún no me crees mi vida?? hehe…<br>Feliz día mi amor ❤️</h1>
+    </div>
+
+    <div id="corazonesE" aria-hidden="true"></div>
+
+    <div id="videoContainerExtra" aria-hidden="true">
+      <video id="loveVideoExtra" playsinline preload="auto" >
+        <source src="https://mdodentaltraining.org/wp-content/uploads/2025/09/WhatsApp-Video-2025-09-03-at-7.46.01-AM.mp4" type="video/mp4">
+        Tu navegador no soporta video HTML5.
+      </video>
+    </div>
+
+    <canvas id="fireworksExtra"></canvas>
+  </div>
+
+  <!-- =================== SCRIPTS (unificados) =================== -->
+  <script>
+    /* =================== PRIMER CÓDIGO: matrix romántico =================== */
+      const canvas = document.getElementById("matrix");
+  const ctx = canvas.getContext("2d");
+
+  // Ajustar tamaño
+  let w, h;
+  function resize() {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  // Letras + corazones + frases
+  const chars = "❤01ABCDEFGHIJKLMNOPQRSTUVWXYZ❤";
+  const fontSize = 20;
+  const phrases = [
+    "mi princesa","mi cielo","te amo","me gustas",
+    "eres lo mejor de la vida","me encantas","boba",
+    "te adoro","tú mía","mi universo","mi todo","mi novia","mi pequeña"
+  ];
+
+  const columns = Math.floor(w / fontSize);
+  const drops = Array(columns).fill(1);
+
+  function draw() {
+    // Fondo con rastro suave
+    ctx.fillStyle = "rgba(0, 0, 0, 0.08)";
+    ctx.fillRect(0, 0, w, h);
+
+    ctx.font = fontSize + "px monospace";
+
+    for (let i = 0; i < drops.length; i++) {
+      let text, isPhrase = false;
+
+      // Probabilidad de mostrar una frase romántica
+      if (Math.random() > 0.985) {
+        text = phrases[Math.floor(Math.random() * phrases.length)];
+        isPhrase = true;
+      } else {
+        text = chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+
+      const x = i * fontSize;
+      const y = drops[i] * fontSize;
+
+      if (isPhrase) {
+        const color = Math.random() > 0.5 ? "#ff003c" : "#ff33aa";
+        ctx.fillStyle = color;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 20;
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = 3;
+        ctx.strokeText(text, x, y);
+        ctx.fillText(text, x, y);
+        ctx.fillStyle = "rgba(255,51,170,0.25)";
+        ctx.fillText(text, x, y - fontSize);
+      } else {
+        ctx.fillStyle = "#ff003c";
+        ctx.shadowColor = "transparent";
+        ctx.fillText(text, x, y);
+      }
+
+      // Resetear la gota al llegar al final
+      if (y > h && Math.random() > 0.975) {
+        drops[i] = 0;
+      }
+
+      drops[i]++;
+    }
+  }
+
+  // 🔥 Ahora 10% más lento (de 50ms a 55ms)
+  setInterval(draw, 55);
+
+    /* =================== Manejo contraseña =================== */
+    function check(){
+      const val = document.getElementById("pw").value.trim();
+      const msg = document.getElementById("msg");
+      if(val === "E❤️W"){
+        msg.textContent = "✅ Correcto, acceso concedido";
+        msg.className = "msg ok";
+
+        // Ocultar primero y detener animación matrix
+        document.getElementById("primero").style.display="none";
+        cancelAnimationFrame(window.__rafVirus);
+        // limpiar canvas para que no quede efecto residuo
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+
+        // Mostrar segundo bloque e inicializar su lógica
+        document.getElementById("segundoBody").style.display="block";
+        initSegundoCodigo();
+      }else{
+        msg.textContent = "❌ Contraseña incorrecta";
+        msg.className = "msg err";
+      }
+    }
+
+    /* =================== SEGUNDO CÓDIGO: initSegundoCodigo =================== */
+    function initSegundoCodigo(){
+      const video = document.getElementById('videoAmor');
+      const carta = document.getElementById('carta');
+      const btn = document.getElementById('btnAmor');
+      const overlay = document.getElementById('overlay');
+      const overlayInner = document.getElementById('overlayInner');
+
+      const razones = [
+        "Tu personalidad","Tus ojitos hermosos","Tus labios","Tu rostro","Tu sonrisa","Tu lindo cabello","Tu belleza","Tu hermosa voz","Tu forma de tratarme","Tu carisma","Tu cariño","Tus detalles","Tu presencia","Tu forma de ser","Tus mensajes","Nuestras llamadas","Lo divertida que eres","Tus chistes","Tu forma de molestarme","Lo única que eres","Tú paciencia hacia mí","Tus gustos","Tu forma de amarme","Tus \"Buenos días\"","Tus \"Buenas noches\"","Los apodos lindos que me dices","Tus halagos","Porqué siempre me haces sentir bien","Te preocupas por mi","Me pones atención","Me haces sonreír en mis peores días","Me aceptas tal y como soy","No me rechazaste","Porqué me haces sentir amado","Porqué me das paz","Porque te esfuerzas por mi","Porque eres una buena novia","Porque siempre me dices cosas lindas","Porque eres mi musa","Tus celos","Porque me apoyas en todo","Porque me animas cuando estoy triste","Porqué eres muy tierna","Porque eres suficiente","Eres mi lugar seguro","Tus \"Ay sordo!!\"","Tus \"te amo\"","Los vídeos que me dedicas","Porqué te ríes de mis tonterías, aunque no den risa","Me hacés sentir especial","Porque eres la chica más perfecta que he conocido","Porque sí uwu","Me haces reír","Siempre me dices que me amas","Contigo puedo ser yo mismo","Siempre tratas de entenderme","Siempre dices que soy lindo","Me valoras","Tienes una voz que encanta","Porque eres mi universo","Tenemos los mismos gustos","Me has mostrado un amor muy bonito","Juegas rovlox conmigo","Tu esencia es muy linda","Porque no necesito fingir contigo","Porqué eres amable","Porque me da felicidad verte ganar aunque Yo pierda","Me haces sentir seguro","Cómo te burlas de mi aveses","Porque eres pervertida hehe","Porque tu forma de amarme es muy única","Eres mi persona favorita","Quiero estar a tu lado siempre","Me hiciste volver a creer en el amor verdadero","Porque me hiciste volver a amar","Porque me tienes muy enamorado","Porque pienso en ti cuando veo algo que te gusta","Porque me soportas","Porque siempre busca algo para pasar tiempo juntos","Porqué me gusta mucho todo de ti","Tienes un enorme corazón","Eres generosa","Eres la mejor persona que he conocido","Eres mi mundo entero","Porque eres mi chica soñada","Tú cuerpo y alma son hermosos","Porque no quiero estar con otra persona","Porque eres muy importante para mi","A tu lado todo es mejor","Porque te necesito","Porque me salvaste de mi mismo","Por llenar mi vida de paz y felicidad","Porque eres mi luz","Porque eres la dueña de mi corazón","Por existir","Porque mereces ser amada","Me motivas a seguir a delante","Eres el amor de vida","Me derrites el corazón con tu amor","A tu lado todo es mejor","Porqué eres simplemente tu ♡"
+      ];
+
+      const emojisRomanticos = ["❤️","💕","💘","💞","💌","🥰","😍","😘","💑","🫶","❤️","💗","❤️"];
+
+      // cuando el usuario da play, mostramos la carta y el botón
+      video.addEventListener('play', () => {
+        setTimeout(() => {
+          carta.style.display = 'block';
+          btn.style.display = 'block';
+          carta.scrollIntoView({ behavior: 'smooth' });
+        }, 900);
+      });
+
+      // botón que inicia overlay y carrusel
+      btn.addEventListener('click', () => {
+        overlayInner.className = 'announce-box';
+        overlayInner.textContent = '¿Quieres saber las más de 50 razones por las cuales te amo y me gustas?';
+        overlay.classList.add('show');
+        overlay.setAttribute('aria-hidden','false');
+
+        setTimeout(() => {
+          overlayInner.textContent = 'Bueno mi amorcito hermoso, mi princesa bella... Estas son las razones...';
+          setTimeout(() => { startFrasesCarrusel(); }, 4000);
+        }, 3000);
+      });
+
+      function startFrasesCarrusel(){
+        let idx = 0;
+        overlayInner.className = 'frase-box';
+
+        function mostrar(){
+          if(idx >= razones.length){
+            overlay.classList.remove('show');
+            overlay.setAttribute('aria-hidden','true');
+
+            // -> Al finalizar el carrusel, arrancamos el código extra automáticamente
+            setTimeout(() => { iniciarNuevoCodigo(); }, 600);
+            return;
+          }
+          const randomEmoji1 = emojisRomanticos[Math.floor(Math.random() * emojisRomanticos.length)];
+          const randomEmoji2 = emojisRomanticos[Math.floor(Math.random() * emojisRomanticos.length)];
+          overlayInner.innerHTML = `${randomEmoji1} &nbsp; ${escapeHtml(razones[idx])} &nbsp; ${randomEmoji2}`;
+          idx++;
+        }
+
+        mostrar();
+        const t = setInterval(() => {
+          mostrar();
+          if(idx >= razones.length){ clearInterval(t); }
+        }, 1900);
+      }
+
+      function escapeHtml(str){
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      }
+
+      // pequeños corazones que caen mientras esté el segundo bloque activo
+      function crearCorazon(){
+        const el = document.createElement('div');
+        el.className = 'corazon';
+        el.textContent = '❤️';
+        el.style.left = Math.random() * window.innerWidth + 'px';
+        el.style.fontSize = (16 + Math.random()*28) + 'px';
+        el.style.animationDuration = (4 + Math.random()*5) + 's';
+        document.body.appendChild(el);
+        setTimeout(()=> el.remove(), 9000);
+      }
+      setInterval(crearCorazon, 500);
+    } // fin initSegundoCodigo
+
+    /* =================== CODIGO EXTRA: iniciarNuevoCodigo =================== */
+    function iniciarNuevoCodigo(){
+      const extra = document.getElementById('extraCodigo');
+      const contenedorE = document.getElementById('corazonesE');
+      const videoExtra = document.getElementById('loveVideoExtra');
+      const videoContainerExtra = document.getElementById('videoContainerExtra');
+      const canvasExtra = document.getElementById('fireworksExtra');
+      const ctxExtra = canvasExtra.getContext('2d');
+
+      // mostrar contenedor extra
+      extra.style.display = 'block';
+      extra.setAttribute('aria-hidden','false');
+
+      // ===== Corazones morados de fondo (creados dentro del contenedor) =====
+      const bgHearts = [];
+      const maxBgHearts = 120;
+      function crearCorazonMorado(){
+        const el = document.createElement('div');
+        el.className = 'corazon';
+        el.textContent = '❤';
+        el.style.left = Math.random() * window.innerWidth + 'px';
+        el.style.fontSize = (Math.random()*18+12) + 'px';
+        el.style.top = Math.random() * window.innerHeight + 'px';
+        el.style.zIndex = 1225;
+        document.getElementById('extraCodigo').appendChild(el);
+        bgHearts.push({el, x: parseFloat(el.style.left), y: parseFloat(el.style.top), vy: Math.random()*0.4+0.1, vx: (Math.random()-0.5)*0.2});
+      }
+      for(let i=0;i<maxBgHearts;i++) crearCorazonMorado();
+
+      function animarCorazonesMorados(){
+        bgHearts.forEach(h=>{
+          h.y -= h.vy;
+          h.x += h.vx;
+          if(h.y < -30) h.y = window.innerHeight + 30;
+          if(h.x < -30) h.x = window.innerWidth + 30;
+          if(h.x > window.innerWidth + 30) h.x = -30;
+          h.el.style.transform = `translate(${h.x}px, ${h.y}px)`;
+        });
+        requestAnimationFrame(animarCorazonesMorados);
+      }
+
+     // ===== Mostrar letra E y hacer 3 clic al corazón rojo =====
+const ePattern = [1,1,1,1,1,1,0,0,0,0,1,1,1,0,0,1,0,0,0,0,1,1,1,1,1];
+contenedorE.innerHTML = '';
+let clickCount = 0;
+
+ePattern.forEach(val=>{
+  const span = document.createElement('span');
+  if(val === 1){
+    span.className = 'corazonRojo';
+    span.innerHTML = '❤';
+    span.addEventListener('click', ()=>{
+      clickCount++;
+      if(clickCount === 3){
+        mostrarVideoExtra(); // ✅ solo al tercer clic se abre el video
+      }
+    });
+  }
+  contenedorE.appendChild(span);
+});
+
+// tras 4s mostramos la E y arrancamos animación de corazones morados
+setTimeout(()=> {
+  contenedorE.style.display = 'grid';
+  animarCorazonesMorados();
+}, 4000);
+
+// ===== Video extra =====
+function mostrarVideoExtra(){
+  contenedorE.style.display = 'none';
+  videoContainerExtra.style.display = 'flex';
+
+  // intentar autoplay robusto
+  videoExtra.muted = true;
+  const playPromise = videoExtra.play();
+  if(playPromise !== undefined){
+    playPromise.then(()=> {
+      // intentar activar audio después de iniciar (algunos navegadores bloquean)
+      setTimeout(()=>{ try{ videoExtra.muted = false; videoExtra.volume = 1; }catch(e){} }, 600);
+    }).catch(()=> {
+      // si falla el autoplay, dejamos controles visibles para que pueda darle play
+      videoExtra.controls = true;
+    });
+  }
+
+  videoExtra.addEventListener('ended', ()=>{
+    videoContainerExtra.style.display = 'none';
+    iniciarFuegosConTextoExtra();
+  }, { once: true });
+}
+
+
+      // ===== Canvas fuegos artificiales extra (partículas -> texto final) =====
+      function resizeCanvasExtra(){ canvasExtra.width = window.innerWidth; canvasExtra.height = window.innerHeight; }
+      window.addEventListener('resize', resizeCanvasExtra);
+      resizeCanvasExtra();
+
+      let particles = [];
+      function Particle(x,y,color,radius){
+        this.x=x; this.y=y; this.color=color; this.radius=radius;
+        this.vx=Math.random()*4-2; this.vy=Math.random()*-4-1; this.life=100;
+        this.update = ()=>{ this.x += this.vx; this.y += this.vy; this.radius *= 0.97; this.life--; };
+        this.draw = ()=>{ ctxExtra.beginPath(); ctxExtra.arc(this.x,this.y,this.radius,0,Math.PI*2); ctxExtra.fillStyle=this.color; ctxExtra.fill(); };
+      }
+
+      function createFirework(x,y){
+        const colors = ['#ff0000','#ff69b4','#ff1493'];
+        for(let i=0;i<50;i++) particles.push(new Particle(x,y,colors[Math.floor(Math.random()*colors.length)],Math.random()*3+2));
+      }
+
+      function animateExtra(){
+        ctxExtra.clearRect(0,0,canvasExtra.width,canvasExtra.height);
+        particles.forEach((p,i)=>{ p.update(); p.draw(); if(p.life<=0) particles.splice(i,1); });
+        requestAnimationFrame(animateExtra);
+      }
+      animateExtra();
+
+      function drawTextParticles(text){
+        const offCanvas = document.createElement('canvas');
+        offCanvas.width = canvasExtra.width; offCanvas.height = canvasExtra.height;
+        const offCtx = offCanvas.getContext('2d');
+        offCtx.font = 'bold 120px Segoe UI'; offCtx.fillStyle = 'white';
+        offCtx.textAlign = 'center'; offCtx.textBaseline = 'middle';
+        offCtx.fillText(text, canvasExtra.width/2, canvasExtra.height/2);
+        const imgData = offCtx.getImageData(0,0,canvasExtra.width,canvasExtra.height);
+        let points = [];
+        for(let y=0;y<canvasExtra.height;y+=6){
+          for(let x=0;x<canvasExtra.width;x+=6){
+            const idx = (y*canvasExtra.width + x)*4;
+            if(imgData.data[idx+3] > 128){
+              points.push({ x: x + Math.random()*150 - 75, y: y + Math.random()*150 - 75, origX:x, origY:y, color:'#ff1493', radius: Math.random()*3+2 });
+            }
+          }
+        }
+        return points;
+      }
+
+      function iniciarFuegosConTextoExtra(){
+        const fireInt = setInterval(()=> createFirework(Math.random()*canvasExtra.width, Math.random()*canvasExtra.height), 200);
+        setTimeout(()=> {
+          clearInterval(fireInt);
+          let textParticles = drawTextParticles('TE AMO EIMY');
+          function animateText(){
+            ctxExtra.fillStyle = 'rgba(255,20,147,0.05)';
+            ctxExtra.fillRect(0,0,canvasExtra.width,canvasExtra.height);
+            textParticles.forEach(p=>{
+              p.x += (p.origX - p.x)*0.05;
+              p.y += (p.origY - p.y)*0.05;
+              ctxExtra.beginPath(); ctxExtra.arc(p.x,p.y,p.radius,0,Math.PI*2);
+              ctxExtra.fillStyle = p.color; ctxExtra.fill();
+            });
+            if(textParticles.some(p=>Math.abs(p.x-p.origX) > 0.5 || Math.abs(p.y-p.origY) > 0.5)){
+              requestAnimationFrame(animateText);
+            } else {
+              setTimeout(()=> ctxExtra.clearRect(0,0,canvasExtra.width,canvasExtra.height),15000);
+            }
+          }
+          animateText();
+        }, 4000);
+      }
+
+    } // FIN iniciarNuevoCodigo
+  </script>
+
+</body>
+</html>
